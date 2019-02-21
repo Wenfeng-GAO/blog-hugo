@@ -5,3 +5,6 @@
 [submodule "themes/beautifulhugo"]
 	path = themes/beautifulhugo
 	url = git@github.com:Wenfeng-GAO/beautifulhugo.git
+[submodule "themes/maupassant"]
+	path = themes/maupassant
+	url = git@github.com:Wenfeng-GAO/maupassant-hugo.git
