@@ -2,7 +2,6 @@
 title: "Kubernetes源码分析之CPU Manager"
 date: 2018-11-28T23:14:35+08:00
 tags: ["k8s", "k8s-kubelet"]
-gitment: true
 ---
 
 # 背景

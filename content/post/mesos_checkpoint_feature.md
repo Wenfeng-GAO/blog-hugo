@@ -2,8 +2,6 @@
 title: "Mesos Checkpoint Feature & Master Agent Connection"
 date: 2017-05-18T09:56:49+08:00
 tags: ["docker", "mesos"] 
-draft: true
-gitment: true
 ---
 
 Mesos在更新版本后将slave改名为agent，所以本文中的agent与mesos-slave完全等同。
@@ -19,17 +17,17 @@ Mesos在更新版本后将slave改名为agent，所以本文中的agent与mesos-
 
 Mesos的`checkpoint`功能主要能起到3个作用：
 
-###### Agent disconnect with executor
+##### Agent disconnect with executor
 
 - 当agent线程挂掉，或者与executor无法连接时，如果framework没有使用`checkpoint`，executor一旦发现与agent断开，立即自动退出。
 - 如果framework使用了`checkpoint`，executor将在一段时间内（`MESOS_RECOVERY_TIMEOUT`）尝试重连，超出timeout之后才会自动退出。这个时间的设置可以通过`--recovery_timeout`标签来设置，默认15分钟。
 
-###### Agent disconnect with master
+##### Agent disconnect with master
 
 - 当agent线程挂掉，或者与master连接断开时，如果没有`checkpoint`，master会立即为此agent管理的所有task发送`TASK_LOST`状态变更的信息，然后等待一段时间，给agent重连的机会（这段时间为mesos `health check`的时间，可以通过`--agent_ping_timeout` 和 `--max_agent_ping_timeouts`标签来设置），如果agent重连成功，master会kill掉之前发送`TASK_LOST`的所有task。
 - 如果使用了`checkpoint`，master不会发送`TASK_LOST`，而是直接等待，如果重连成功了，也不会kill任何task，就像什么也没有发生一样。
 
-###### Agent recovery
+##### Agent recovery
 
 - 当agent重启后，如果没有`checkpoint`，agent管理的还存活着的task会被立即重启。
 - 如果使用了`checkpoint`，agent会将一些信息（`Task Info`, `Executor Info`, etc.）写入本地磁盘，重启后可以根据设置来进行恢复。
@@ -40,7 +38,7 @@ Mesos的`checkpoint`功能主要能起到3个作用：
 
 ## Dealing with Partitioned or Failed Agents
 
-#### 2 mechanisms to track availability and health
+### 2 mechanisms to track availability and health
 
 Mesos master用两种方法来检测跟踪agent的可靠性：
 
@@ -53,13 +51,13 @@ Mesos master用两种方法来检测跟踪agent的可靠性：
 
 值的注意的是，这个时间设置需要大于`ZooKeeper session timeout`以避免无用的`re-register`尝试。
 
-#### Steps to remove disconnected agent
+### Steps to remove disconnected agent
 
 当master检测到agent失联后，会采取步骤从列表中删掉失联的agent，这其中的步骤也会分有`checkpoint`和没有`checkpoint`，这在前面也有所提及。
 
 可以看以下图示：
 
-![](/assets/mesos-checkpoint-master-agent-connection/mesos-master-agent.jpg)
+![](/mesos-master-agent.jpg)
 
 若没有开启`checkpoint`，master会立即发送`TASK_LOST` message，只有如果重连成功，会kill掉这些task。
 
