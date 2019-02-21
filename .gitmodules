@@ -2,3 +2,6 @@
 	path = public
 	url = git@github.com:Wenfeng-GAO/Wenfeng-GAO.github.io.git
 	branch = master
+[submodule "themes/beautifulhugo"]
+	path = themes/beautifulhugo
+	url = git@github.com:Wenfeng-GAO/beautifulhugo.git
