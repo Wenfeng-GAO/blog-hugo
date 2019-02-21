@@ -1,9 +1,8 @@
-baseURL = "http://example.org/"
+baseURL = "https://wenfeng-gao.github.io/"
 languageCode = "en-us"
 title = "Je pense donc je suis"
-tags = ["k8s", "docker"]
+tags = ["k8s", "docker", "k8s-kubelet"]
 theme = "beautifulhugo"
-#theme = "ananke"
 #disqusShortname = "https://wenfeng-gao.github.io"
 
 [Params]
