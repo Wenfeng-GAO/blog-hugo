@@ -57,7 +57,7 @@ Mesos master用两种方法来检测跟踪agent的可靠性：
 
 可以看以下图示：
 
-![](/mesos-master-agent.jpg)
+![](http://pn9ta8hbk.bkt.clouddn.com/mesos-master-agent.jpg)
 
 若没有开启`checkpoint`，master会立即发送`TASK_LOST` message，只有如果重连成功，会kill掉这些task。
 
