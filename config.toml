@@ -1,9 +1,8 @@
 baseURL = "https://wenfeng-gao.github.io/"
 languageCode = "en-us"
 title = "Je pense donc je suis"
-tags = ["k8s", "docker", "k8s-kubelet"]
 theme = "beautifulhugo"
-#disqusShortname = "https://wenfeng-gao.github.io"
+disqusShortname = "https-wenfeng-gao-github-io"
 
 [Params]
   #subtitle = "Build a beautiful and simple website in minutes"
@@ -22,7 +21,7 @@ theme = "beautifulhugo"
 [Author]
   name = "Wenfeng Gao"
   email = "elricfeng@gmail.com"
-  googleplus = "103999582027187063854" # or xxxxxxxxxxxxxxxxxxxxx
+  googleplus = "103999582027187063854"
   github = "Wenfeng-GAO"
   # linkedin = "username"
   stackoverflow = "users/4262814/wenfeng"
