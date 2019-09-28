@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset
+      xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+<!-- created with Free Online Sitemap Generator www.xml-sitemaps.com -->
+
+
+<url>
+  <loc>https://wenfeng-gao.github.io/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>1.00</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/page/about/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/tags/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/post/k8s-volume-manager-source-code-analysis/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/tags/k8s/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/tags/kubelet/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/post/k8s-pleg-source-code-analysis/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/post/k8s_cpumanager_source_code/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/post/core-dump-file-size-limit-in-docker/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/tags/docker/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/post/coroutine-with-gevent/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/tags/python/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/tags/coroutine/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/post/python-yield-keyword/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/post/a-little-taste-on-react/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/tags/react/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/post/simple-commit-msg-hook/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/tags/git/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/tags/shell/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/post/basic-shell-commands/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/post/a-ping-question/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/tags/network/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/page/2/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/post/kubernetes-on-coreos/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/post/setup-coreos-cluster-with-static-ip/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/post/mesos_checkpoint_feature/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/post/deploy-worldpress-in-coreos-cluster-using-fleet/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/post/setup-coreos-cluster-in-virtualbox/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/post/docker-bridge-network/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/post/setup-jekyll-with-docker/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/tags/coreos/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/tags/jekyll/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/tags/mesos/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/tags/unit-test/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://wenfeng-gao.github.io/post/mock-with-mockito/</loc>
+  <lastmod>2019-02-28T15:11:50+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+
+
+</urlset>
