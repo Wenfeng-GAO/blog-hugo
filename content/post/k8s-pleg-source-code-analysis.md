@@ -1,7 +1,7 @@
 ---
 title: "Kubernetes源码分析之PLEG"
 date: 2019-02-22T10:55:09+08:00
-tags: ["k8s", "kubelet"]
+tags: ["kubernetes", "kubelet"]
 ---
 
 > PLEG(Pod Lifecycle Event Generator)是kubelet的核心模块，理解pleg对理解kubelet的运行机制很有帮助。本文的源码分析基于v1.13.2版本。

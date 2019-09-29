@@ -1,7 +1,7 @@
 ---
 title: "Kubernetes on Coreos"
 date: 2017-06-13T18:22:48+08:00
-tags: ["coreos", "docker", "k8s"]
+tags: ["kubernetes", "coreos", "docker"]
 ---
 
 >Kubernetes is an open-source system for automating deployment, scaling, and management of containerized applications.
