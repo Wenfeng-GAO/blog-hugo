@@ -9,7 +9,6 @@ summary: "In this article, I will share you how to profile non-root java process
 container with async-profiler. Async-profiler is one of the popular ways to
 profile java process, I'll present the process and the difficulties I met while
 using this tool."
-draft: true
 ---
 
 # Ways for Java CPU Profiling
