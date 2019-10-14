@@ -1,0 +1,735 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" width="1200" height="486" onload="init(evt)" viewBox="0 0 1200 486" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<style type="text/css">
+	text { font-family:Verdana; font-size:12px; fill:black; }
+	.func_g:hover { stroke:black; stroke-width:0.5; cursor:pointer; }
+</style>
+<script type="text/ecmascript">
+<![CDATA[
+	var details, searchbtn, matchedtxt, svg;
+	function init(evt) {
+		details = document.getElementById("details").firstChild;
+		searchbtn = document.getElementById("search");
+		matchedtxt = document.getElementById("matched");
+		svg = document.getElementsByTagName("svg")[0];
+		searching = 0;
+	}
+
+	// mouse-over for info
+	function s(node) {		// show
+		info = g_to_text(node);
+		details.nodeValue = "Function: " + info;
+	}
+	function c() {			// clear
+		details.nodeValue = ' ';
+	}
+
+	// ctrl-F for search
+	window.addEventListener("keydown",function (e) {
+		if (e.keyCode === 114 || (e.ctrlKey && e.keyCode === 70)) {
+			e.preventDefault();
+			search_prompt();
+		}
+	})
+
+	// functions
+	function find_child(parent, name, attr) {
+		var children = parent.childNodes;
+		for (var i=0; i<children.length;i++) {
+			if (children[i].tagName == name)
+				return (attr != undefined) ? children[i].attributes[attr].value : children[i];
+		}
+		return;
+	}
+	function orig_save(e, attr, val) {
+		if (e.attributes["_orig_"+attr] != undefined) return;
+		if (e.attributes[attr] == undefined) return;
+		if (val == undefined) val = e.attributes[attr].value;
+		e.setAttribute("_orig_"+attr, val);
+	}
+	function orig_load(e, attr) {
+		if (e.attributes["_orig_"+attr] == undefined) return;
+		e.attributes[attr].value = e.attributes["_orig_"+attr].value;
+		e.removeAttribute("_orig_"+attr);
+	}
+	function g_to_text(e) {
+		var text = find_child(e, "title").firstChild.nodeValue;
+		return (text)
+	}
+	function g_to_func(e) {
+		var func = g_to_text(e);
+		// if there's any manipulation we want to do to the function
+		// name before it's searched, do it here before returning.
+		return (func);
+	}
+	function update_text(e) {
+		var r = find_child(e, "rect");
+		var t = find_child(e, "text");
+		var w = parseFloat(r.attributes["width"].value) -3;
+		var txt = find_child(e, "title").textContent.replace(/\([^(]*\)$/,"");
+		t.attributes["x"].value = parseFloat(r.attributes["x"].value) +3;
+
+		// Smaller than this size won't fit anything
+		if (w < 2*12*0.59) {
+			t.textContent = "";
+			return;
+		}
+
+		t.textContent = txt;
+		// Fit in full text width
+		if (/^ *$/.test(txt) || t.getSubStringLength(0, txt.length) < w)
+			return;
+
+		for (var x=txt.length-2; x>0; x--) {
+			if (t.getSubStringLength(0, x+2) <= w) {
+				t.textContent = txt.substring(0,x) + "..";
+				return;
+			}
+		}
+		t.textContent = "";
+	}
+
+	// zoom
+	function zoom_reset(e) {
+		if (e.attributes != undefined) {
+			orig_load(e, "x");
+			orig_load(e, "width");
+		}
+		if (e.childNodes == undefined) return;
+		for(var i=0, c=e.childNodes; i<c.length; i++) {
+			zoom_reset(c[i]);
+		}
+	}
+	function zoom_child(e, x, ratio) {
+		if (e.attributes != undefined) {
+			if (e.attributes["x"] != undefined) {
+				orig_save(e, "x");
+				e.attributes["x"].value = (parseFloat(e.attributes["x"].value) - x - 10) * ratio + 10;
+				if(e.tagName == "text") e.attributes["x"].value = find_child(e.parentNode, "rect", "x") + 3;
+			}
+			if (e.attributes["width"] != undefined) {
+				orig_save(e, "width");
+				e.attributes["width"].value = parseFloat(e.attributes["width"].value) * ratio;
+			}
+		}
+
+		if (e.childNodes == undefined) return;
+		for(var i=0, c=e.childNodes; i<c.length; i++) {
+			zoom_child(c[i], x-10, ratio);
+		}
+	}
+	function zoom_parent(e) {
+		if (e.attributes) {
+			if (e.attributes["x"] != undefined) {
+				orig_save(e, "x");
+				e.attributes["x"].value = 10;
+			}
+			if (e.attributes["width"] != undefined) {
+				orig_save(e, "width");
+				e.attributes["width"].value = parseInt(svg.width.baseVal.value) - (10*2);
+			}
+		}
+		if (e.childNodes == undefined) return;
+		for(var i=0, c=e.childNodes; i<c.length; i++) {
+			zoom_parent(c[i]);
+		}
+	}
+	function zoom(node) {
+		var attr = find_child(node, "rect").attributes;
+		var width = parseFloat(attr["width"].value);
+		var xmin = parseFloat(attr["x"].value);
+		var xmax = parseFloat(xmin + width);
+		var ymin = parseFloat(attr["y"].value);
+		var ratio = (svg.width.baseVal.value - 2*10) / width;
+
+		// XXX: Workaround for JavaScript float issues (fix me)
+		var fudge = 0.0001;
+
+		var unzoombtn = document.getElementById("unzoom");
+		unzoombtn.style["opacity"] = "1.0";
+
+		var el = document.getElementsByTagName("g");
+		for(var i=0;i<el.length;i++){
+			var e = el[i];
+			var a = find_child(e, "rect").attributes;
+			var ex = parseFloat(a["x"].value);
+			var ew = parseFloat(a["width"].value);
+			// Is it an ancestor
+			if (0 == 0) {
+				var upstack = parseFloat(a["y"].value) > ymin;
+			} else {
+				var upstack = parseFloat(a["y"].value) < ymin;
+			}
+			if (upstack) {
+				// Direct ancestor
+				if (ex <= xmin && (ex+ew+fudge) >= xmax) {
+					e.style["opacity"] = "0.5";
+					zoom_parent(e);
+					e.onclick = function(e){unzoom(); zoom(this);};
+					update_text(e);
+				}
+				// not in current path
+				else
+					e.style["display"] = "none";
+			}
+			// Children maybe
+			else {
+				// no common path
+				if (ex < xmin || ex + fudge >= xmax) {
+					e.style["display"] = "none";
+				}
+				else {
+					zoom_child(e, xmin, ratio);
+					e.onclick = function(e){zoom(this);};
+					update_text(e);
+				}
+			}
+		}
+	}
+	function unzoom() {
+		var unzoombtn = document.getElementById("unzoom");
+		unzoombtn.style["opacity"] = "0.0";
+
+		var el = document.getElementsByTagName("g");
+		for(i=0;i<el.length;i++) {
+			el[i].style["display"] = "block";
+			el[i].style["opacity"] = "1";
+			zoom_reset(el[i]);
+			update_text(el[i]);
+		}
+	}
+
+	// search
+	function reset_search() {
+		var el = document.getElementsByTagName("rect");
+		for (var i=0; i < el.length; i++) {
+			orig_load(el[i], "fill")
+		}
+	}
+	function search_prompt() {
+		if (!searching) {
+			var term = prompt("Enter a search term (regexp " +
+			    "allowed, eg: ^ext4_)", "");
+			if (term != null) {
+				search(term)
+			}
+		} else {
+			reset_search();
+			searching = 0;
+			searchbtn.style["opacity"] = "0.1";
+			searchbtn.firstChild.nodeValue = "Search"
+			matchedtxt.style["opacity"] = "0.0";
+			matchedtxt.firstChild.nodeValue = ""
+		}
+	}
+	function search(term) {
+		var re = new RegExp(term);
+		var el = document.getElementsByTagName("g");
+		var matches = new Object();
+		var maxwidth = 0;
+		for (var i = 0; i < el.length; i++) {
+			var e = el[i];
+			if (e.attributes["class"].value != "func_g")
+				continue;
+			var func = g_to_func(e);
+			var rect = find_child(e, "rect");
+			if (rect == null) {
+				// the rect might be wrapped in an anchor
+				// if nameattr href is being used
+				if (rect = find_child(e, "a")) {
+				    rect = find_child(r, "rect");
+				}
+			}
+			if (func == null || rect == null)
+				continue;
+
+			// Save max width. Only works as we have a root frame
+			var w = parseFloat(rect.attributes["width"].value);
+			if (w > maxwidth)
+				maxwidth = w;
+
+			if (func.match(re)) {
+				// highlight
+				var x = parseFloat(rect.attributes["x"].value);
+				orig_save(rect, "fill");
+				rect.attributes["fill"].value =
+				    "rgb(230,0,230)";
+
+				// remember matches
+				if (matches[x] == undefined) {
+					matches[x] = w;
+				} else {
+					if (w > matches[x]) {
+						// overwrite with parent
+						matches[x] = w;
+					}
+				}
+				searching = 1;
+			}
+		}
+		if (!searching)
+			return;
+
+		searchbtn.style["opacity"] = "1.0";
+		searchbtn.firstChild.nodeValue = "Reset Search"
+
+		// calculate percent matched, excluding vertical overlap
+		var count = 0;
+		var lastx = -1;
+		var lastw = 0;
+		var keys = Array();
+		for (k in matches) {
+			if (matches.hasOwnProperty(k))
+				keys.push(k);
+		}
+		// sort the matched frames by their x location
+		// ascending, then width descending
+		keys.sort(function(a, b){
+			return a - b;
+		});
+		// Step through frames saving only the biggest bottom-up frames
+		// thanks to the sort order. This relies on the tree property
+		// where children are always smaller than their parents.
+		var fudge = 0.0001;	// JavaScript floating point
+		for (var k in keys) {
+			var x = parseFloat(keys[k]);
+			var w = matches[keys[k]];
+			if (x >= lastx + lastw - fudge) {
+				count += w;
+				lastx = x;
+				lastw = w;
+			}
+		}
+		// display matched percent
+		matchedtxt.style["opacity"] = "1.0";
+		pct = 100 * count / maxwidth;
+		if (pct == 100)
+			pct = "100"
+		else
+			pct = pct.toFixed(1)
+		matchedtxt.firstChild.nodeValue = "Matched: " + pct + "%";
+	}
+	function searchover(e) {
+		searchbtn.style["opacity"] = "1.0";
+	}
+	function searchout(e) {
+		if (searching) {
+			searchbtn.style["opacity"] = "1.0";
+		} else {
+			searchbtn.style["opacity"] = "0.1";
+		}
+	}
+]]>
+</script>
+<rect x="0" y="0" width="100%" height="100%" fill="rgb(240,240,220)"/>
+<text x="600" y="24" text-anchor="middle" style="font-size:17px">CPU Flamegraph</text>
+<text x="10" y="469" id="details"> </text>
+<text x="10" y="24" id="unzoom" onclick="unzoom()" style="opacity:0.0;cursor:pointer">Reset Zoom</text>
+<text x="1090" y="24" id="search" onmouseover="searchover()" onmouseout="searchout()" onclick="search_prompt()" style="opacity:0.1;cursor:pointer">Search</text>
+<text x="1090" y="469" id="matched"> </text>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>all (15 samples, 100.00%)</title><rect x="10.0" y="435.0" width="1180.0" height="15" fill="#f16e6e" rx="2" ry="2"/>
+<text x="13.0" y="446.0">all</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>com/dianping/cat/utils/Threads$RunnableThread.run (12 samples, 80.00%)</title><rect x="10.0" y="419.0" width="944.0" height="15" fill="#67f967" rx="2" ry="2"/>
+<text x="13.0" y="430.0">com/dianping/cat/utils/Threads$RunnableThread.run</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>java/lang/Thread.run (12 samples, 80.00%)</title><rect x="10.0" y="403.0" width="944.0" height="15" fill="#60f260" rx="2" ry="2"/>
+<text x="13.0" y="414.0">java/lang/Thread.run</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>com/dianping/cat/message/io/DefaultTreeSender$MergeAtomicTask.run (6 samples, 40.00%)</title><rect x="10.0" y="387.0" width="472.0" height="15" fill="#4ade4a" rx="2" ry="2"/>
+<text x="13.0" y="398.0">com/dianping/cat/message/io/DefaultTreeSender$MergeAtomicTask.run</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>com/dianping/cat/message/io/DefaultTreeSender.access$600 (1 samples, 6.67%)</title><rect x="10.0" y="371.0" width="78.7" height="15" fill="#4bdf4b" rx="2" ry="2"/>
+<text x="13.0" y="382.0">com/dianp..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>com/dianping/cat/message/io/DefaultTreeSender.access$500 (1 samples, 6.67%)</title><rect x="10.0" y="355.0" width="78.7" height="15" fill="#4cdf4c" rx="2" ry="2"/>
+<text x="13.0" y="366.0">com/dianp..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>java/lang/Thread.sleep (5 samples, 33.33%)</title><rect x="88.7" y="371.0" width="393.3" height="15" fill="#68f968" rx="2" ry="2"/>
+<text x="91.7" y="382.0">java/lang/Thread.sleep</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>JVM_Sleep (4 samples, 26.67%)</title><rect x="88.7" y="355.0" width="314.6" height="15" fill="#e35a5a" rx="2" ry="2"/>
+<text x="91.7" y="366.0">JVM_Sleep</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>os::sleep(Thread*, long, bool) (4 samples, 26.67%)</title><rect x="88.7" y="339.0" width="314.6" height="15" fill="#e4e445" rx="2" ry="2"/>
+<text x="91.7" y="350.0">os::sleep(Thread*, long, bool)</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>__lll_unlock_wake (1 samples, 6.67%)</title><rect x="88.7" y="323.0" width="78.6" height="15" fill="#f47272" rx="2" ry="2"/>
+<text x="91.7" y="334.0">__lll_unl..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>entry_SYSCALL_64_after_hwframe (1 samples, 6.67%)</title><rect x="88.7" y="307.0" width="78.6" height="15" fill="#d47000" rx="2" ry="2"/>
+<text x="91.7" y="318.0">entry_SYS..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>do_syscall_64 (1 samples, 6.67%)</title><rect x="88.7" y="291.0" width="78.6" height="15" fill="#e88400" rx="2" ry="2"/>
+<text x="91.7" y="302.0">do_syscal..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>sys_futex (1 samples, 6.67%)</title><rect x="88.7" y="275.0" width="78.6" height="15" fill="#c76300" rx="2" ry="2"/>
+<text x="91.7" y="286.0">sys_futex</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>do_futex (1 samples, 6.67%)</title><rect x="88.7" y="259.0" width="78.6" height="15" fill="#db7700" rx="2" ry="2"/>
+<text x="91.7" y="270.0">do_futex</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>futex_wake (1 samples, 6.67%)</title><rect x="88.7" y="243.0" width="78.6" height="15" fill="#c15d00" rx="2" ry="2"/>
+<text x="91.7" y="254.0">futex_wake</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>__pthread_mutex_lock (1 samples, 6.67%)</title><rect x="167.3" y="323.0" width="78.7" height="15" fill="#c93434" rx="2" ry="2"/>
+<text x="170.3" y="334.0">__pthread..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>pthread_cond_timedwait@@GLIBC_2.3.2 (2 samples, 13.33%)</title><rect x="246.0" y="323.0" width="157.3" height="15" fill="#ce3b3b" rx="2" ry="2"/>
+<text x="249.0" y="334.0">pthread_cond_timedwa..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>entry_SYSCALL_64_after_hwframe (2 samples, 13.33%)</title><rect x="246.0" y="307.0" width="157.3" height="15" fill="#fb9700" rx="2" ry="2"/>
+<text x="249.0" y="318.0">entry_SYSCALL_64_aft..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>do_syscall_64 (2 samples, 13.33%)</title><rect x="246.0" y="291.0" width="157.3" height="15" fill="#c66200" rx="2" ry="2"/>
+<text x="249.0" y="302.0">do_syscall_64</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>sys_futex (1 samples, 6.67%)</title><rect x="246.0" y="275.0" width="78.7" height="15" fill="#e17d00" rx="2" ry="2"/>
+<text x="249.0" y="286.0">sys_futex</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>do_futex (1 samples, 6.67%)</title><rect x="246.0" y="259.0" width="78.7" height="15" fill="#c96500" rx="2" ry="2"/>
+<text x="249.0" y="270.0">do_futex</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>_raw_spin_lock (1 samples, 6.67%)</title><rect x="246.0" y="243.0" width="78.7" height="15" fill="#d06c00" rx="2" ry="2"/>
+<text x="249.0" y="254.0">_raw_spin..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>syscall_slow_exit_work (1 samples, 6.67%)</title><rect x="324.7" y="275.0" width="78.6" height="15" fill="#ea8600" rx="2" ry="2"/>
+<text x="327.7" y="286.0">syscall_s..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>__audit_syscall_exit (1 samples, 6.67%)</title><rect x="324.7" y="259.0" width="78.6" height="15" fill="#ed8900" rx="2" ry="2"/>
+<text x="327.7" y="270.0">__audit_s..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>kfree (1 samples, 6.67%)</title><rect x="324.7" y="243.0" width="78.6" height="15" fill="#d06c00" rx="2" ry="2"/>
+<text x="327.7" y="254.0">kfree</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>java_lang_Thread::set_thread_status(oopDesc*, java_lang_Thread::ThreadStatus) (1 samples, 6.67%)</title><rect x="403.3" y="355.0" width="78.7" height="15" fill="#b5b534" rx="2" ry="2"/>
+<text x="406.3" y="366.0">java_lang..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>com/dianping/cat/message/io/DefaultTreeSender.run (6 samples, 40.00%)</title><rect x="482.0" y="387.0" width="472.0" height="15" fill="#3bd03b" rx="2" ry="2"/>
+<text x="485.0" y="398.0">com/dianping/cat/message/io/DefaultTreeSender.run</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>com/dianping/cat/message/io/DefaultMessageQueue.poll (6 samples, 40.00%)</title><rect x="482.0" y="371.0" width="472.0" height="15" fill="#5bee5b" rx="2" ry="2"/>
+<text x="485.0" y="382.0">com/dianping/cat/message/io/DefaultMessageQueue.poll</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>java/util/concurrent/ArrayBlockingQueue.poll (6 samples, 40.00%)</title><rect x="482.0" y="355.0" width="472.0" height="15" fill="#50e350" rx="2" ry="2"/>
+<text x="485.0" y="366.0">java/util/concurrent/ArrayBlockingQueue.poll</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>java/util/concurrent/locks/AbstractQueuedSynchronizer$ConditionObject.awaitNanos (6 samples, 40.00%)</title><rect x="482.0" y="339.0" width="472.0" height="15" fill="#54e754" rx="2" ry="2"/>
+<text x="485.0" y="350.0">java/util/concurrent/locks/AbstractQueuedSynchronizer$ConditionOb..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>java/util/concurrent/locks/LockSupport.parkNanos (6 samples, 40.00%)</title><rect x="482.0" y="323.0" width="472.0" height="15" fill="#4de14d" rx="2" ry="2"/>
+<text x="485.0" y="334.0">java/util/concurrent/locks/LockSupport.parkNanos</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>sun/misc/Unsafe.park (6 samples, 40.00%)</title><rect x="482.0" y="307.0" width="472.0" height="15" fill="#41d641" rx="2" ry="2"/>
+<text x="485.0" y="318.0">sun/misc/Unsafe.park</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Unsafe_Park (6 samples, 40.00%)</title><rect x="482.0" y="291.0" width="472.0" height="15" fill="#e25858" rx="2" ry="2"/>
+<text x="485.0" y="302.0">Unsafe_Park</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>__lll_unlock_wake (1 samples, 6.67%)</title><rect x="560.7" y="275.0" width="78.6" height="15" fill="#d44444" rx="2" ry="2"/>
+<text x="563.7" y="286.0">__lll_unl..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>entry_SYSCALL_64_after_hwframe (1 samples, 6.67%)</title><rect x="560.7" y="259.0" width="78.6" height="15" fill="#e98500" rx="2" ry="2"/>
+<text x="563.7" y="270.0">entry_SYS..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>do_syscall_64 (1 samples, 6.67%)</title><rect x="560.7" y="243.0" width="78.6" height="15" fill="#f89400" rx="2" ry="2"/>
+<text x="563.7" y="254.0">do_syscal..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>sys_futex (1 samples, 6.67%)</title><rect x="560.7" y="227.0" width="78.6" height="15" fill="#e98500" rx="2" ry="2"/>
+<text x="563.7" y="238.0">sys_futex</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>do_futex (1 samples, 6.67%)</title><rect x="560.7" y="211.0" width="78.6" height="15" fill="#e27e00" rx="2" ry="2"/>
+<text x="563.7" y="222.0">do_futex</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>hash_futex (1 samples, 6.67%)</title><rect x="560.7" y="195.0" width="78.6" height="15" fill="#d77300" rx="2" ry="2"/>
+<text x="563.7" y="206.0">hash_futex</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>elapsedTimer::stop() (1 samples, 6.67%)</title><rect x="639.3" y="275.0" width="78.7" height="15" fill="#d2d23e" rx="2" ry="2"/>
+<text x="642.3" y="286.0">elapsedTi..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>__clock_gettime (1 samples, 6.67%)</title><rect x="639.3" y="259.0" width="78.7" height="15" fill="#dc5050" rx="2" ry="2"/>
+<text x="642.3" y="270.0">__clock_g..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>pthread_cond_timedwait@@GLIBC_2.3.2 (3 samples, 20.00%)</title><rect x="718.0" y="275.0" width="236.0" height="15" fill="#f16d6d" rx="2" ry="2"/>
+<text x="721.0" y="286.0">pthread_cond_timedwait@@GLIBC_2..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>entry_SYSCALL_64_after_hwframe (2 samples, 13.33%)</title><rect x="796.7" y="259.0" width="157.3" height="15" fill="#d16d00" rx="2" ry="2"/>
+<text x="799.7" y="270.0">entry_SYSCALL_64_aft..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>do_syscall_64 (1 samples, 6.67%)</title><rect x="796.7" y="243.0" width="78.6" height="15" fill="#df7b00" rx="2" ry="2"/>
+<text x="799.7" y="254.0">do_syscal..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>syscall_slow_exit_work (1 samples, 6.67%)</title><rect x="796.7" y="227.0" width="78.6" height="15" fill="#cb6700" rx="2" ry="2"/>
+<text x="799.7" y="238.0">syscall_s..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>__audit_syscall_exit (1 samples, 6.67%)</title><rect x="796.7" y="211.0" width="78.6" height="15" fill="#d57100" rx="2" ry="2"/>
+<text x="799.7" y="222.0">__audit_s..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>sys_futex (1 samples, 6.67%)</title><rect x="875.3" y="243.0" width="78.7" height="15" fill="#e17d00" rx="2" ry="2"/>
+<text x="878.3" y="254.0">sys_futex</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>java/lang/Thread.run (2 samples, 13.33%)</title><rect x="954.0" y="419.0" width="157.3" height="15" fill="#44d944" rx="2" ry="2"/>
+<text x="957.0" y="430.0">java/lang/Thread.run</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>java/util/concurrent/ThreadPoolExecutor$Worker.run (2 samples, 13.33%)</title><rect x="954.0" y="403.0" width="157.3" height="15" fill="#43d843" rx="2" ry="2"/>
+<text x="957.0" y="414.0">java/util/concurrent..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>java/util/concurrent/ThreadPoolExecutor.runWorker (2 samples, 13.33%)</title><rect x="954.0" y="387.0" width="157.3" height="15" fill="#5aed5a" rx="2" ry="2"/>
+<text x="957.0" y="398.0">java/util/concurrent..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>java/util/concurrent/ScheduledThreadPoolExecutor$ScheduledFutureTask.run (1 samples, 6.67%)</title><rect x="954.0" y="371.0" width="78.7" height="15" fill="#65f665" rx="2" ry="2"/>
+<text x="957.0" y="382.0">java/util..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>java/util/concurrent/ScheduledThreadPoolExecutor$ScheduledFutureTask.access$301 (1 samples, 6.67%)</title><rect x="954.0" y="355.0" width="78.7" height="15" fill="#4ee24e" rx="2" ry="2"/>
+<text x="957.0" y="366.0">java/util..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>java/util/concurrent/FutureTask.runAndReset (1 samples, 6.67%)</title><rect x="954.0" y="339.0" width="78.7" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="957.0" y="350.0">java/util..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>java/util/concurrent/Executors$RunnableAdapter.call (1 samples, 6.67%)</title><rect x="954.0" y="323.0" width="78.7" height="15" fill="#52e552" rx="2" ry="2"/>
+<text x="957.0" y="334.0">java/util..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>com/dianping/cat/management/mbean/DockerCpuInfo$1.run (1 samples, 6.67%)</title><rect x="954.0" y="307.0" width="78.7" height="15" fill="#3ed33e" rx="2" ry="2"/>
+<text x="957.0" y="318.0">com/dianp..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>com/dianping/cat/management/mbean/DockerCpuInfo.access$000 (1 samples, 6.67%)</title><rect x="954.0" y="291.0" width="78.7" height="15" fill="#40d540" rx="2" ry="2"/>
+<text x="957.0" y="302.0">com/dianp..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>com/dianping/cat/management/mbean/DockerCpuInfo.update (1 samples, 6.67%)</title><rect x="954.0" y="275.0" width="78.7" height="15" fill="#59ec59" rx="2" ry="2"/>
+<text x="957.0" y="286.0">com/dianp..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>sun/management/OperatingSystemImpl.getSystemCpuLoad (1 samples, 6.67%)</title><rect x="954.0" y="259.0" width="78.7" height="15" fill="#48dc48" rx="2" ry="2"/>
+<text x="957.0" y="270.0">sun/manag..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>[unknown] (1 samples, 6.67%)</title><rect x="954.0" y="243.0" width="78.7" height="15" fill="#fb7c7c" rx="2" ry="2"/>
+<text x="957.0" y="254.0">[unknown]</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>__GI___read (1 samples, 6.67%)</title><rect x="954.0" y="227.0" width="78.7" height="15" fill="#d13f3f" rx="2" ry="2"/>
+<text x="957.0" y="238.0">__GI___read</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>entry_SYSCALL_64_after_hwframe (1 samples, 6.67%)</title><rect x="954.0" y="211.0" width="78.7" height="15" fill="#fb9700" rx="2" ry="2"/>
+<text x="957.0" y="222.0">entry_SYS..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>do_syscall_64 (1 samples, 6.67%)</title><rect x="954.0" y="195.0" width="78.7" height="15" fill="#d77300" rx="2" ry="2"/>
+<text x="957.0" y="206.0">do_syscal..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>sys_read (1 samples, 6.67%)</title><rect x="954.0" y="179.0" width="78.7" height="15" fill="#d97500" rx="2" ry="2"/>
+<text x="957.0" y="190.0">sys_read</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>vfs_read (1 samples, 6.67%)</title><rect x="954.0" y="163.0" width="78.7" height="15" fill="#d97500" rx="2" ry="2"/>
+<text x="957.0" y="174.0">vfs_read</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>__vfs_read (1 samples, 6.67%)</title><rect x="954.0" y="147.0" width="78.7" height="15" fill="#e68200" rx="2" ry="2"/>
+<text x="957.0" y="158.0">__vfs_read</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>proc_reg_read (1 samples, 6.67%)</title><rect x="954.0" y="131.0" width="78.7" height="15" fill="#c35f00" rx="2" ry="2"/>
+<text x="957.0" y="142.0">proc_reg_..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>seq_read (1 samples, 6.67%)</title><rect x="954.0" y="115.0" width="78.7" height="15" fill="#d26e00" rx="2" ry="2"/>
+<text x="957.0" y="126.0">seq_read</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>show_stat (1 samples, 6.67%)</title><rect x="954.0" y="99.0" width="78.7" height="15" fill="#d16d00" rx="2" ry="2"/>
+<text x="957.0" y="110.0">show_stat</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>nr_context_switches (1 samples, 6.67%)</title><rect x="954.0" y="83.0" width="78.7" height="15" fill="#e88400" rx="2" ry="2"/>
+<text x="957.0" y="94.0">nr_contex..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>cpumask_next (1 samples, 6.67%)</title><rect x="954.0" y="67.0" width="78.7" height="15" fill="#ec8800" rx="2" ry="2"/>
+<text x="957.0" y="78.0">cpumask_n..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>find_next_bit (1 samples, 6.67%)</title><rect x="954.0" y="51.0" width="78.7" height="15" fill="#fb9700" rx="2" ry="2"/>
+<text x="957.0" y="62.0">find_next..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>_find_next_bit (1 samples, 6.67%)</title><rect x="954.0" y="35.0" width="78.7" height="15" fill="#c05c00" rx="2" ry="2"/>
+<text x="957.0" y="46.0">_find_nex..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>sun/rmi/transport/tcp/TCPTransport$ConnectionHandler.run (1 samples, 6.67%)</title><rect x="1032.7" y="371.0" width="78.6" height="15" fill="#4de14d" rx="2" ry="2"/>
+<text x="1035.7" y="382.0">sun/rmi/t..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>java/security/AccessController.doPrivileged (1 samples, 6.67%)</title><rect x="1032.7" y="355.0" width="78.6" height="15" fill="#40d540" rx="2" ry="2"/>
+<text x="1035.7" y="366.0">java/secu..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>sun/rmi/transport/tcp/TCPTransport$ConnectionHandler$$Lambda$23/232278557.run (1 samples, 6.67%)</title><rect x="1032.7" y="339.0" width="78.6" height="15" fill="#53e653" rx="2" ry="2"/>
+<text x="1035.7" y="350.0">sun/rmi/t..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>sun/rmi/transport/tcp/TCPTransport$ConnectionHandler.lambda$run$0 (1 samples, 6.67%)</title><rect x="1032.7" y="323.0" width="78.6" height="15" fill="#59ec59" rx="2" ry="2"/>
+<text x="1035.7" y="334.0">sun/rmi/t..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>sun/rmi/transport/tcp/TCPTransport$ConnectionHandler.run0 (1 samples, 6.67%)</title><rect x="1032.7" y="307.0" width="78.6" height="15" fill="#56e956" rx="2" ry="2"/>
+<text x="1035.7" y="318.0">sun/rmi/t..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>sun/rmi/transport/tcp/TCPTransport.handleMessages (1 samples, 6.67%)</title><rect x="1032.7" y="291.0" width="78.6" height="15" fill="#38cd38" rx="2" ry="2"/>
+<text x="1035.7" y="302.0">sun/rmi/t..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>sun/rmi/transport/Transport.serviceCall (1 samples, 6.67%)</title><rect x="1032.7" y="275.0" width="78.6" height="15" fill="#6cfd6c" rx="2" ry="2"/>
+<text x="1035.7" y="286.0">sun/rmi/t..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>java/security/AccessController.doPrivileged (1 samples, 6.67%)</title><rect x="1032.7" y="259.0" width="78.6" height="15" fill="#68f968" rx="2" ry="2"/>
+<text x="1035.7" y="270.0">java/secu..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>sun/rmi/transport/Transport$1.run (1 samples, 6.67%)</title><rect x="1032.7" y="243.0" width="78.6" height="15" fill="#60f260" rx="2" ry="2"/>
+<text x="1035.7" y="254.0">sun/rmi/t..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>sun/rmi/transport/Transport$1.run (1 samples, 6.67%)</title><rect x="1032.7" y="227.0" width="78.6" height="15" fill="#63f563" rx="2" ry="2"/>
+<text x="1035.7" y="238.0">sun/rmi/t..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>sun/rmi/server/UnicastServerRef.dispatch (1 samples, 6.67%)</title><rect x="1032.7" y="211.0" width="78.6" height="15" fill="#48dc48" rx="2" ry="2"/>
+<text x="1035.7" y="222.0">sun/rmi/s..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>java/io/ObjectOutputStream.writeObject (1 samples, 6.67%)</title><rect x="1032.7" y="195.0" width="78.6" height="15" fill="#5df05d" rx="2" ry="2"/>
+<text x="1035.7" y="206.0">java/io/O..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>java/io/ObjectOutputStream.writeObject0 (1 samples, 6.67%)</title><rect x="1032.7" y="179.0" width="78.6" height="15" fill="#48dc48" rx="2" ry="2"/>
+<text x="1035.7" y="190.0">java/io/O..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>java/io/ObjectOutputStream.writeOrdinaryObject (1 samples, 6.67%)</title><rect x="1032.7" y="163.0" width="78.6" height="15" fill="#55e855" rx="2" ry="2"/>
+<text x="1035.7" y="174.0">java/io/O..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>java/io/ObjectOutputStream.writeClassDesc (1 samples, 6.67%)</title><rect x="1032.7" y="147.0" width="78.6" height="15" fill="#6cfd6c" rx="2" ry="2"/>
+<text x="1035.7" y="158.0">java/io/O..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>java/io/ObjectOutputStream.writeNonProxyDesc (1 samples, 6.67%)</title><rect x="1032.7" y="131.0" width="78.6" height="15" fill="#34c934" rx="2" ry="2"/>
+<text x="1035.7" y="142.0">java/io/O..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>java/io/ObjectOutputStream.writeClassDesc (1 samples, 6.67%)</title><rect x="1032.7" y="115.0" width="78.6" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="1035.7" y="126.0">java/io/O..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>java/io/ObjectOutputStream.writeNonProxyDesc (1 samples, 6.67%)</title><rect x="1032.7" y="99.0" width="78.6" height="15" fill="#68f968" rx="2" ry="2"/>
+<text x="1035.7" y="110.0">java/io/O..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>java/io/ObjectStreamClass.writeNonProxy (1 samples, 6.67%)</title><rect x="1032.7" y="83.0" width="78.6" height="15" fill="#3ed33e" rx="2" ry="2"/>
+<text x="1035.7" y="94.0">java/io/O..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>java/io/ObjectOutputStream.writeUTF (1 samples, 6.67%)</title><rect x="1032.7" y="67.0" width="78.6" height="15" fill="#67f967" rx="2" ry="2"/>
+<text x="1035.7" y="78.0">java/io/O..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>java/io/ObjectOutputStream$BlockDataOutputStream.writeUTF (1 samples, 6.67%)</title><rect x="1032.7" y="51.0" width="78.6" height="15" fill="#43d843" rx="2" ry="2"/>
+<text x="1035.7" y="62.0">java/io/O..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>java/io/ObjectOutputStream$BlockDataOutputStream.getUTFLength (1 samples, 6.67%)</title><rect x="1032.7" y="35.0" width="78.6" height="15" fill="#58ea58" rx="2" ry="2"/>
+<text x="1035.7" y="46.0">java/io/O..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>start_thread (1 samples, 6.67%)</title><rect x="1111.3" y="419.0" width="78.7" height="15" fill="#d94b4b" rx="2" ry="2"/>
+<text x="1114.3" y="430.0">start_thr..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>java_start(Thread*) (1 samples, 6.67%)</title><rect x="1111.3" y="403.0" width="78.7" height="15" fill="#fa7c7c" rx="2" ry="2"/>
+<text x="1114.3" y="414.0">java_star..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>ConcurrentG1RefineThread::run() (1 samples, 6.67%)</title><rect x="1111.3" y="387.0" width="78.7" height="15" fill="#d6d640" rx="2" ry="2"/>
+<text x="1114.3" y="398.0">Concurren..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>ConcurrentG1RefineThread::run_young_rs_sampling() (1 samples, 6.67%)</title><rect x="1111.3" y="371.0" width="78.7" height="15" fill="#d2d23e" rx="2" ry="2"/>
+<text x="1114.3" y="382.0">Concurren..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>YoungList::rs_length_sampling_next() (1 samples, 6.67%)</title><rect x="1111.3" y="355.0" width="78.7" height="15" fill="#bbbb36" rx="2" ry="2"/>
+<text x="1114.3" y="366.0">YoungList..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>G1CollectorPolicy::update_incremental_cset_info(HeapRegion*, unsigned long) (1 samples, 6.67%)</title><rect x="1111.3" y="339.0" width="78.7" height="15" fill="#c4c439" rx="2" ry="2"/>
+<text x="1114.3" y="350.0">G1Collect..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>G1CollectorPolicy::predict_region_elapsed_time_ms(HeapRegion*, bool) (1 samples, 6.67%)</title><rect x="1111.3" y="323.0" width="78.7" height="15" fill="#c2c239" rx="2" ry="2"/>
+<text x="1114.3" y="334.0">G1Collect..</text>
+</g>
+</svg>
