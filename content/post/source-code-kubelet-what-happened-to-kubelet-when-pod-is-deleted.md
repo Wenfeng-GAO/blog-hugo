@@ -5,12 +5,17 @@ lastmod: 2020-03-31T04:11:32+08:00
 keywords: ["kubernetes", "kubelet", "source code go through"]
 tags: ["kubernetes", "kubelet"]
 categories: []
-summary: ""
+summary: "The source code of Kubelet is quite complicated. In order to better understand
+it, we start by thinking about an operation we play normally: delete a pod.
+What will happen to Kubelet and how will it delete containers eventually? Let's
+go through the code module by module while keeping these questions in mind."
 ---
 
 The source code of Kubelet is quite complicated. In order to better understand
-it, we start by thinking about an operation we
+it, we start by thinking about an operation we play normally: delete a pod.
 
+What will happen to Kubelet and how will it delete containers eventually? Let's
+go through the code module by module while keeping these questions in mind.
 
 ## Conclusion
 Before discussing the implementation details of the source code, let's stand
