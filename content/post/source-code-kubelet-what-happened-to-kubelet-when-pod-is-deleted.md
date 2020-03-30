@@ -1,47 +1,51 @@
 ---
-title: "当我们删除一个pod的时候，Kubelet都做了什么？"
-date: 2020-03-19T16:13:58+08:00
-lastmod: 2020-03-19T16:13:58+08:00
+title: "What Happened to Kubelet When Pod Is Deleted"
+date: 2020-03-26T04:11:32+08:00
+lastmod: 2020-03-31T04:11:32+08:00
 keywords: ["kubernetes", "kubelet", "source code go through"]
 tags: ["kubernetes", "kubelet"]
 categories: []
 summary: ""
-draft: true
 ---
 
-Kubelet的源码相当的复杂，为了更好地理解它，我们从思考一个日常经常做的操作——删除一个pod入手，抽丝剥茧、层层分析，
-尝试理解Kubelet的行为机制以及背后的设计哲学。
+The source code of Kubelet is quite complicated. In order to better understand
+it, we start by thinking about an operation we
 
-## 结论
-讨论代码实现细节之前，先站在高处，说下Kubelet大体的操作流程。
 
-当我们删除一个pod时，例如
+## Conclusion
+Before discussing the implementation details of the source code, let's stand
+high and talk about the general process that Kubelet will make.
+
+For example, we start by deleting a pod.
 
 ```bash
 kubectl delete pod <pod>
 ```
 
-kube-apiserver收到请求后不会直接删除etcd中对应的pod资源，而是会设置pod资源的`.metadata.deletionTimestamp`为当前时间；
-而一直watch着pod资源的Kubelet监听到这一变化后，会开始回收资源的一系列操作（删除容器、释放存储等等）；而后Kubelet
-在确定所有资源成功释放后，会发送force delete请求给kube-apiserver，至此pod资源才会被正在从etcd中删除。
+kube-apiserver won't directly delete the corresponding pod resource in etcd
+after receiving the deletion request, but will set the `.metadata.deletionTimestamp` of pod to current time.
 
+On the mean time, Kubelet, who is `watching` the pod resource from
+kube-apiserver, will start a series of operations to recycle computing
+resources(such as deleting containers, releasing storages, etc.). As soon as
+Kubelet makes sure resources are successfully released, it will send a force
+deletion request to kube-apiserver, at which point the pod resource will be
+really deleted from etcd.
 
 ![kubelet-remove-pod-steps](/post/source-code-kubelet-how-kubelet-delete-pod/kubelet-remove-pod-steps.png)
 
+## kube-apiserver update deletionTimestamp
+The most fundamental task of kube-apiserver is to `CRUD` resources in etcd.
 
-## kube-apiserver更新deletionTimestamp
-kube-apiserver的最终任务都是CRUD etcd中的资源信息。
-
-当收到delete pod的请求时，有2中可能：
-
+When receiving a deletion request, there're 2 possibilities:
 ### force delete
 ```bash
 kubectl delete pods <pod> --grace-period=0 --force
 ```
-这时kube-apiserver会直接删除etcd中的元数据。
+In this case, kube-apiserver will delete the metadata in etcd directly.
+
 ### graceful delete
-默认`terminationGracePeriodSeconds`为30s，收到请求后kube-apiserver会更新
-etcd中的pod信息，将pod metadata中deletionTimestamp打上当前时间。
+After receiving request, rather than delete directly, kube-apiserver will update `deletionTimestamp` of pod metadata to current time.
 ```yaml
 apiVersion: v1
 kind: Pod
@@ -49,18 +53,25 @@ metadata:
   deletionGracePeriodSeconds: 30
   deletionTimestamp: "2020-03-23T20:56:25Z"
 ```
-这也是我们删除pod时kube-apiserver首先做的事情。
 
-就这样，kube-apiserver的工作就结束了，至于其他组件会根据pod的变化而做什么相应的操作，已经不是api-server所关心的了。
-这里也体现了kubernetes设计的哲学——每个组件只负责做好自己的事。
+This is also the default thing kube-apiserver does when we delete a pod
+normally.
 
-## kubelet感知变化
-Kubelet通过 *list-watch* 机制来感知pod的变化，具体是如何实现的呢，我们来仔细看看。
+In this way, kube-apiserver finishes its work, and it's no longer
+kube-apiserver's concern as for what the other components will do according to
+the pod changes.
 
-在 *makePodSourceConfig* 模块中，Kubelet会起一个goroutine专门监听各种来源(kube-apiserver, manifest,
-http等等，这里我们主要关心kube-apiserver)的pod的变化，通过 *Merge* 方法，生成结构统一的变化信息元（结构体），并将这个
-变化信息元放到一个updates channel中；而后 *syncLoop* 模块会负责从这个channel中消费。
+Here also reflects the design philosophy of Kubernetes, each component is only
+responsible for doing its own job.
 
+## Watch by Kubelet
+Kubelet uses the *list-watch* mechanism to sense changes in of the pod. How does it work? Let's take a closer look.
+
+In the *makePodSourceConfig* module, Kubelet will set up a goroutine to listen to various sources of changes of pods(kube-apiserver, manifest, http etc., here we are mainly concerned about changes from the kube-apiserver).
+
+Then through the *Merge* method, it generates a uniformed metadata structure, and
+put it into an updates channel, then the *syncLoop* module is responsible for
+consuming from this channel.
 ```go
 // pkg/kubelet/kubelet.go
 
@@ -72,7 +83,8 @@ if kubeDeps.PodConfig == nil {
     }
 }
 ```
-在 *makePodSourceConfig* 方法中，重点关注watch apiserver方面。
+In the *makePodSourceConfig* method, we focus on the aspect of waching
+apiserver.
 ```go
 // makePodSourceConfig creates a config.PodConfig from the given
 // KubeletConfiguration or returns an error.
@@ -95,7 +107,7 @@ func makePodSourceConfig(kubeCfg *kubeletconfiginternal.KubeletConfiguration, ku
 	return cfg, nil
 }
 ```
-在 *cfg.Channel* 方法中最终会起一个goroutine来不断将apiserver中更新的pod信息重新整理后发送到一个channel中供Kubelet其他模块( *syncLoop* )消费
+In the *cfg.Channel* method, a goroutine will eventually be created to continuously rearrange the info of updated pods from kube-apiserver and send it to a channel for consumption by other module (*syncLoop*).
 ```go
 // pkg/util/config/config.go
 // Channel returns a channel where a configuration source
@@ -119,8 +131,7 @@ func (m *Mux) Channel(source string) chan interface{} {
 	return newChannel
 }
 ```
-而 *config.NewSourceApiserver* 方法会用k8s的一个比较通用的机制 *list-watch* 来将最新的pod更新信息发送给
-上面工作的goroutine中。
+Meanwhile, the *config.NewSourceApiserver* method will use a general mechanism of k8s (*list-watch*) to send the latest pod update info to the goroutine working above.
 ```go
 // pkg/kubelet/config/apiserver.go
 // NewSourceApiserver creates a config source that watches and pulls from the apiserver.
@@ -142,16 +153,18 @@ func newSourceApiserverFromLW(lw cache.ListerWatcher, updates chan<- interface{}
 	go r.Run(wait.NeverStop)
 }
 ```
-至此，Kubelet中这个从kube-apiserver中获取到pod更新的模块也任务完成了。这个模块的任务也很清晰，
-只负责不断地从各个来源更新pod的最新动态，整理后将统一的信息发送到update
-channel中，至于谁来消费、如何消费，也不是这个模块考虑的问题了。
+At this point, the module that obtains pod's updates from kube-apiserver has also completed its task. 
 
->设计哲学：每个模块只做一件事，将它做好，并且尽量避免依赖关系
+The task of this module is clear as well: only responsible for continuously updating the latest updates of pods from various sources, and sending unified information to *update* channel.
 
-## Kubelet删除容器
-下面来看下消费update channel中的信息，来删除容器回收资源的代码模块。
+As to who consumes from the *update* channel or how to consume it, it's not the business of this module any longer.
 
-在 *syncLoopIteration* 代码模块中，Kubelet会消费来自各个channel的信息，然后根据需要去创建、更新或销毁pod。
+> Do one thing per module, do it well, and try to avoid dependencies.
+
+## Delete containers
+Let's take a look at the module that consumes the information from the *update* channel l, which will delete the containers of deleted pod.
+
+In the *syncLoopIteration* module, Kubelet consumes information from various channels and then creates, updates, or destroys pods as needed.
 ```go
 func (kl *Kubelet) syncLoopIteration(configCh <-chan kubetypes.PodUpdate, handler SyncHandler,
 	syncCh <-chan time.Time, housekeepingCh <-chan time.Time, plegCh <-chan *pleg.PodLifecycleEvent) bool {
@@ -197,8 +210,9 @@ func (kl *Kubelet) syncLoopIteration(configCh <-chan kubetypes.PodUpdate, handle
     ...
 }
 ```
-我们这里主要关心来自 *configCh* 的信息，这些都是监听自kube-apiserver的。当pod被删除时，我们会得到
-一个type为 *kubetypes.DELETE* 的update，Kubelet会调用 *handler.HandlePodUpdates(u.Pods)* 方法，最终会调用 *kl.killPod* 方法。
+Here we are mainly concerned about the information from *configCh*, which are all wathed from kube-apiserver.
+
+When the pod is deleted, Kubelet receives an update of type *kubetypes.DELETE*, then it will call *handler.HandlePodUpdates (u.Pods)* method, which will eventually call the *kl.killPod* method.
 ```go
 // One of the following arguments must be non-nil: runningPod, status.
 // TODO: Modify containerRuntime.KillPod() to accept the right arguments.
@@ -222,11 +236,14 @@ func (kl *Kubelet) killPod(pod *v1.Pod, runningPod *kubecontainer.Pod, status *k
 	return nil
 }
 ```
-至此，pod所对应的容器会被删掉，所使用的资源也会被释放，可是etcd中依然还存在 pod信息，这个信息又是什么时候，被谁删掉的呢？
 
-## Kubelet删除Pod
+From now on, containers corresponding to the pod will be deleted, and the resources used will also be released. 
 
-Kubelet启动时会同时启动一个`statusManager`，来负责pod status的同步。
+However, the pod metadata still exists in etcd. When will this metadata be
+deleted and by which component? Let's take a look.
+
+## Force delete pod
+Kubelet starts a `statusManager` at the same time when it starts, which is responsible for the synchronization of pod status.
 ```go
 // pkg/kubelet/kubelet.go
 // Run starts the kubelet reacting to config updates
@@ -264,7 +281,7 @@ func (m *manager) Start() {
 	}, 0)
 }
 ```
-主要同步工作在 *syncPod* 方法中
+The main synchronization works lies in *syncPod* methods.
 ```go
 // pkg/kubelet/status/status_manager.go
 // syncPod syncs the given status with the API server. The caller must not hold the lock.
@@ -286,7 +303,8 @@ func (m *manager) syncPod(uid types.UID, status versionedPodStatus) {
 	}
 }
 ```
-可以看到，在 *syncPod* 方法中只要Kubelet认为 *canBeDeleted* ，那么就会 *force delete* 这个pod，那怎样算是 *canBeDeleted* 呢？
+As we can see in the *syncPod* method, Kubelet will *force delete pod* as long
+as it thinks the pod *canBeDeleted*. So what means *canBeDeleted* exactly?
 ```go
 func (m *manager) canBeDeleted(pod *v1.Pod, status v1.PodStatus) bool {
 	if pod.DeletionTimestamp == nil || kubetypes.IsMirrorPod(pod) {
@@ -334,7 +352,10 @@ func (kl *Kubelet) PodResourcesAreReclaimed(pod *v1.Pod, status v1.PodStatus) bo
 	return true
 }
 ```
-原来，Kubelet要确认所有container都被delete了，volume等资源也释放了，才算是 *canBeDeleted* ，才会去真正地delete pod资源。
+It turns out that Kubelet needs to confirm that all containers are dead, and resources such as volume have been released, etc.
 
-至此，删除一个pod的过程就算基本完成了，当然Kubelet也会有一些机制（如housekeeping），来保证一些异常情况的清理工作，
-保证集群的状态使用与期望的保持一致。
+Finally, the process of deleting a pod is almost finished. Of course there're
+some other mechanisms such as housekeeping to ensure everything goes right in
+Kubelet's responsibility. We've basically understood what happened to Kubelet
+when a pod is normally deleted. And by go through the source code, we feel some
+of design philosophy in kubernetes as well. 
