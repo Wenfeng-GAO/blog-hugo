@@ -4,7 +4,7 @@ date: 2020-03-26T04:11:32+08:00
 lastmod: 2020-03-31T04:11:32+08:00
 keywords: ["kubernetes", "kubelet", "source code go through"]
 tags: ["kubernetes", "kubelet"]
-categories: []
+categories: ["k8s"]
 summary: "The source code of Kubelet is quite complicated. In order to better understand
 it, we start by thinking about an operation we play normally: delete a pod.
 What will happen to Kubelet and how will it delete containers eventually? Let's

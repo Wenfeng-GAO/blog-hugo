@@ -1,10 +1,10 @@
 ---
-title: "K8s Informer Mechanics (Part I)"
+title: "K8s Informer Mechanics Part I"
 date: 2021-02-05T11:32:21+08:00
 lastmod: 2021-02-05T11:32:21+08:00
 keywords: ["kubernetes", "client-go", "informer", "sourcecode"]
 tags: ["kubernetes", "client-go"]
-categories: []
+categories: ["k8s"]
 summary: "为了能实时从apiserver获取资源的状态及变化，又最大限度得降低apiserver工作负载，k8s 使用了一种叫informer的机制，通过精妙的设计，无需任何中间件，只依靠最简单的http协议 便实现了需求。informer机制是如何工作的呢？"
 ---
 
@@ -22,6 +22,11 @@ informer机制是如何工作的呢？
 4. Processer，用观察者模式实现的回调器
 
 接下来会出一个informer系列博客，来逐一分析各个模块的代码实现。这篇是这个系列的第一篇，主要分析Informer在代码上如何串起各个模块来完成功能的。
+
+
+### Informer Mechanics系列
+- [K8s Informer Mechanics Part I]({{< relref "/post/k8s-informer-mechanics.md" >}})
+- [K8s Informer Mechanics Part II - Reflector]({{< relref "/post/k8s-informer-mechanics-reflector.md" >}})
 
 # 正文
 

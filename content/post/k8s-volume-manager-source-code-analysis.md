@@ -1,7 +1,9 @@
 ---
 title: "Kubernetes源码分析之VolumeManager"
 date: 2019-02-28T23:07:20+08:00
+keywords: ["kubernetes", "kubelet", "volumemanager", "sourcecode"]
 tags: ["kubernetes", "kubelet"]
+categories: ["k8s"]
 ---
 
 ## 前言
