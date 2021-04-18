@@ -49,9 +49,14 @@ copyright = ""            # default: author.name ↓        # 默认为下面配
   identifier = "categories"
   url = "/categories/"
 [[menu.main]]
+    name = "Readings"
+    url = "/categories/readings/"
+    weight = 40
+[[menu.main]]
     name = "About"
     url = "/page/about/"
     weight = 50
+
 
 [params]
   version = "4.x"           # Used to give a friendly message when you have an incompatible update
