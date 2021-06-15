@@ -25,9 +25,3 @@ git commit -m "update submodule reference"
 
 # 8. Push the source project *and* the public submodule to Github together.
 git push -u origin master --recurse-submodules=on-demand
-
-# # Push source and build repos.
-# git push origin master
-#
-# # Come Back up to the Project Root
-# cd ..
