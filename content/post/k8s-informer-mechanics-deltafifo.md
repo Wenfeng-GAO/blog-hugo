@@ -6,7 +6,7 @@ keywords: ["kubernetes", "client-go", "informer", "sourcecode", "reflector",
 "deltafifo", "fifo"]
 tags: ["kubernetes", "client-go"]
 categories: ["k8s"]
-summary: "为了能实时从apiserver获取资源的状态及变化，又最大限度得降低apiserver工作负载，k8s 使用了一种叫informer的机制，通过精妙的设计，无需任何中间件，只依靠最简单的http协议 便实现了需求。作为介绍Informer机制系列文章的第二篇，我们详细分析Reflector模块的代码实现。"
+summary: "为了能实时从apiserver获取资源的状态及变化，又最大限度得降低apiserver工作负载，k8s 使用了一种叫informer的机制，通过精妙的设计，无需任何中间件，只依靠最简单的http协议 便实现了需求。作为介绍Informer机制系列文章的第三篇，我们详细分析DeltaFIFO模块的代码实现。"
 ---
 
 ## 前言
@@ -28,6 +28,7 @@ informer机制是如何工作的呢？
 - [K8s Informer Mechanics Part I]({{< relref "/post/k8s-informer-mechanics.md" >}})
 - [K8s Informer Mechanics Part II - Reflector]({{< relref "/post/k8s-informer-mechanics-reflector.md" >}})
 - [K8s Informer Mechanics Part III - DeltaFIFO]({{< relref "/post/k8s-informer-mechanics-deltafifo.md" >}})
+- [K8s Informer Mechanics Part IV - Indexer]({{< relref "/post/k8s-informer-mechanics-indexer.md" >}})
 
 ## 正文
 
