@@ -27,6 +27,7 @@ informer机制是如何工作的呢？
 ### Informer Mechanics系列
 - [K8s Informer Mechanics Part I]({{< relref "/post/k8s-informer-mechanics.md" >}})
 - [K8s Informer Mechanics Part II - Reflector]({{< relref "/post/k8s-informer-mechanics-reflector.md" >}})
+- [K8s Informer Mechanics Part III - DeltaFIFO]({{< relref "/post/k8s-informer-mechanics-deltafifo.md" >}})
 
 # 正文
 
