@@ -1,7 +1,7 @@
 ---
 title: "K8s Informer Mechanics Part IV - Indexer"
-date: 2021-06-29T12:08:27+08:00
-lastmod: 2021-06-29T12:08:27+08:00
+date: 2021-06-28T12:09:27+08:00
+lastmod: 2021-06-28T12:10:27+08:00
 keywords: ["kubernetes", "client-go", "informer", "sourcecode", "indexer"]
 tags: ["kubernetes", "client-go"]
 categories: ["k8s"]
