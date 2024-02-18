@@ -3,7 +3,7 @@ title: "Every Thing You Need to Know About mTLS"
 date: 2024-02-07T16:31:52+08:00
 lastmod: 2024-02-07T16:31:52+08:00
 keywords: ["https", "mTLS"]
-tags: ["https", "mTLS"]
+tags: ["https"]
 categories: ["http/https"]
 summary: ""
 ---
